@@ -1,13 +1,57 @@
-# AccuKnox Secret Scan GitHub Action
+# 🔑 Automate Secret Scanning with AccuKnox GitHub Action
 
-Scans a repository for hardcoded secrets via the AccuKnox ASPM scanner and uploads findings to the AccuKnox Console.
+The **AccuKnox Secret Scan GitHub Action** detects **hardcoded secrets, credentials, API keys and other sensitive information** in your Git repositories.
+It integrates with the **AccuKnox Console**, giving you centralized visibility, risk tracking and remediation across your development lifecycle.
 
-## Usage
+Catch secrets before they leak, with **shift-left security**.
 
-Add `ACCUKNOX_TOKEN`, `ACCUKNOX_ENDPOINT`, `ACCUKNOX_LABEL` as repository secrets, then:
+---
+
+## 🎯 Key Features
+
+- ✅ **Hardcoded Secret Detection** – Find API keys, passwords, tokens and other secrets in code and Git history.
+- 🔒 **Shift-Left Security** – Run secret scanning directly in your CI/CD pipeline.
+- 📥 **Console Integration** – Upload findings to the AccuKnox Console for visibility and remediation tracking.
+- ⚙️ **Flexible Configuration** – Pin the scanner version, override the scan command or add custom arguments.
+- 🚦 **Fail Builds on Findings** – Fail the pipeline on detected secrets, or run in soft-fail mode.
+- 📦 **Downloadable Reports** – Results are stored as a workflow artifact in SARIF format.
+
+---
+
+## ⚠️ Prerequisites
+
+- 🔐 **AccuKnox Console access** – Sign in to your AccuKnox tenant.
+- 🗝️ **API token** – Generated in the AccuKnox Console (see Step 1).
+- 🏷️ **Label** – A label in the Console to tag scan reports.
+- 🔑 **GitHub secrets** – Store the token, endpoint and label securely in your repository.
+
+---
+
+## 📌 Installation & Usage
+
+### Step 1: Retrieve AccuKnox credentials
+
+1. Log in to the AccuKnox Console.
+2. Go to **Settings → Tokens → Create Token** and copy the token.
+3. Create a **label** under **Dashboard → Labels** for the scan results.
+
+### Step 2: Configure GitHub secrets
+
+In your repository go to **Settings → Secrets and variables → Actions → New repository secret**:
+
+| Secret Name         | Description |
+|---------------------|-------------|
+| `ACCUKNOX_TOKEN`    | AccuKnox API token |
+| `ACCUKNOX_ENDPOINT` | AccuKnox API endpoint (e.g. `cspm.demo.accuknox.com`) |
+| `ACCUKNOX_LABEL`    | Label used to group results in the AccuKnox Console |
+
+### Step 3: Add the workflow
+
+Create `.github/workflows/secret-scan.yml`:
 
 ```yaml
 name: AccuKnox Secret Scan
+
 on:
   push:
     branches: [main]
@@ -18,11 +62,13 @@ jobs:
   secret-scan:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # full history so the scanner can scan past commits
+          fetch-depth: 0   # full history so past commits are scanned too
 
-      - uses: Vickydew1/secret-scan-action-new@latest
+      - name: Run Secret Scan
+        uses: Vickydew1/secret-scan-action-new@latest
         with:
           accuknox_token: ${{ secrets.ACCUKNOX_TOKEN }}
           accuknox_endpoint: ${{ secrets.ACCUKNOX_ENDPOINT }}
@@ -30,26 +76,65 @@ jobs:
           soft_fail: true
 ```
 
-## Inputs
+---
 
-| Input | Required | Default | Description |
+## ⚙️ Configuration Options (Inputs)
+
+| Input | Description | Required | Default |
 |---|---|---|---|
-| `accuknox_token` | yes | | AccuKnox API token |
-| `accuknox_endpoint` | yes | | AccuKnox Console endpoint |
-| `accuknox_label` | yes | | Label for results in the Console |
-| `additional_arguments` | no | `""` | Extra args appended to the scan command |
-| `base_command` | no | `detect --source . --report-format sarif --report-path results.json --no-banner` | Replaces the scan command (keep `--report-path results.json` for artifact upload) |
-| `soft_fail` | no | `false` | Don't fail the job on findings |
-| `scanner_version` | no | `v0.15.1` | AccuKnox ASPM scanner CLI release |
-| `upload_results` | no | `true` | Upload `results.json` as an artifact |
+| `accuknox_token` | AccuKnox API token | Yes | – |
+| `accuknox_endpoint` | AccuKnox Console endpoint | Yes | – |
+| `accuknox_label` | Label used to organize results in the Console | Yes | – |
+| `soft_fail` | Do not fail the workflow when secrets are found | No | `false` |
+| `additional_arguments` | Extra arguments appended to the scan command | No | `""` |
+| `base_command` | Replaces the default scan command (keep `--report-path results.json` for artifact upload) | No | `detect --source . --report-format sarif --report-path results.json --no-banner` |
+| `scanner_version` | AccuKnox ASPM scanner CLI release to use | No | `v0.15.1` |
+| `upload_results` | Upload `results.json` as a GitHub artifact | No | `true` |
 
+---
 
-## Security notes
+## 🔍 How It Works
 
-- Pass credentials only via `secrets.*`; they are exposed to the scanner as environment variables, never on the command line.
+1. **Code is pushed** – The workflow triggers.
+2. **Scanner is set up** – The pinned AccuKnox scanner release is downloaded and the secret scan engine is installed.
+3. **Repository is scanned** – Working tree and Git history are checked for secrets, and a SARIF report (`results.json`) is generated.
+4. **Findings are uploaded** – Results are sent to the AccuKnox Console using your token, endpoint and label.
+5. **Artifact is stored** – If `upload_results: true`, the report is attached to the workflow run as `secret-scan-results`.
+6. **Review findings** – In the Console go to **Issues → Findings** and filter by *Secret Findings*.
+7. **Pipeline decision** – With `soft_fail: false`, the job fails when secrets are detected.
+
+---
+
+## 🛠️ Troubleshooting & Best Practices
+
+| Issue | Cause | Solution |
+|---|---|---|
+| `token, label, and endpoint must be provided` | GitHub secret not set | Add `ACCUKNOX_TOKEN`, `ACCUKNOX_LABEL` and `ACCUKNOX_ENDPOINT` |
+| `401 Token is invalid or expired` | Wrong or expired token | Generate a new token in the Console |
+| No results in AccuKnox Console | Wrong label or endpoint | Verify the label and endpoint values |
+| Secrets in older commits are missed | Shallow checkout | Set `fetch-depth: 0` on `actions/checkout` |
+| Workflow fails even for minor findings | `soft_fail` not set | Set `soft_fail: true` to continue despite findings |
+| Artifact upload finds no file | Custom `base_command` writes elsewhere | Keep `--report-path results.json` |
+
+**Best practices**
+
+- Pass credentials only through `secrets.*`; they reach the scanner as environment variables, never on the command line.
 - Pin the action to a release tag or commit SHA for reproducible builds.
-- The scanner binary is downloaded from the official `accuknox/aspm-scanner-cli` GitHub release; pin `scanner_version` as needed.
+- Pin `scanner_version` and upgrade deliberately.
+- Start with `soft_fail: true`, review findings, then enforce failing builds.
 
-## License
+---
+
+## 📖 Support & Documentation
+
+📚 Docs: [AccuKnox Documentation](https://help.accuknox.com)
+
+📧 Support: support@accuknox.com
+
+---
+
+## 📄 License
 
 Apache License 2.0, see [LICENSE](LICENSE).
+
+🔐 **Shift Left with AccuKnox – Catch Secrets Before They Leak!** 🚀
