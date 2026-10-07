@@ -1,0 +1,81 @@
+name: "AccuKnox Secret Scan (Gitleaks)"
+description: "Run AccuKnox Secret Security scan on a repository using Gitleaks"
+
+branding:
+  icon: "shield"
+  color: "purple"
+
+inputs:
+  accuknox_token:
+    description: "CSPM token"
+    required: true
+  accuknox_endpoint:
+    description: "CSPM Console endpoint URL"
+    required: true
+  accuknox_label:
+    description: "Label for scan results in AccuKnox Console"
+    required: true
+  additional_arguments:
+    description: "Extra arguments appended to the gitleaks command"
+    required: false
+    default: ""
+  soft_fail:
+    description: "Do not return an error code if there are failed checks"
+    required: false
+    default: "false"
+  base_command:
+    description: "Override the gitleaks command passed to --command (optional)"
+    required: false
+    default: ""
+  scanner_version:
+    description: "AccuKnox ASPM scanner CLI release to use"
+    required: false
+    default: "v0.15.1"
+  upload_results:
+    description: "Upload scan results as GitHub artifact"
+    required: false
+    default: "true"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Run AccuKnox Secret Scan
+      shell: bash
+      env:
+        ACCUKNOX_TOKEN: ${{ inputs.accuknox_token }}
+        ACCUKNOX_LABEL: ${{ inputs.accuknox_label }}
+        ACCUKNOX_ENDPOINT: ${{ inputs.accuknox_endpoint }}
+        ADDITIONAL_ARGUMENTS: ${{ inputs.additional_arguments }}
+        SOFT_FAIL: ${{ inputs.soft_fail }}
+        BASE_COMMAND: ${{ inputs.base_command }}
+        SCANNER_VERSION: ${{ inputs.scanner_version }}
+      run: |
+        set -e
+
+        if [ -z "$ACCUKNOX_TOKEN" ] || [ -z "$ACCUKNOX_LABEL" ] || [ -z "$ACCUKNOX_ENDPOINT" ]; then
+          echo "ERROR: token, label, and endpoint must be provided!"
+          exit 1
+        fi
+
+        curl -fsSL --retry 3 https://github.com/accuknox/aspm-scanner-cli/releases/download/${SCANNER_VERSION}/accuknox-aspm-scanner -o "$RUNNER_TEMP/accuknox-aspm-scanner"
+        chmod +x "$RUNNER_TEMP/accuknox-aspm-scanner"
+        SCANNER="$RUNNER_TEMP/accuknox-aspm-scanner"
+        "$SCANNER" tool install --type gitleaks
+
+        SOFT_FAIL_ARG=""
+        [ "${SOFT_FAIL//[$'\t\r\n ']}" = "true" ] && SOFT_FAIL_ARG="--softfail"
+
+        CMD="detect --source . --report-format sarif --report-path results.json --no-banner"
+        [ -n "$BASE_COMMAND" ] && CMD="$BASE_COMMAND"
+        [ -n "$ADDITIONAL_ARGUMENTS" ] && CMD="$CMD $ADDITIONAL_ARGUMENTS"
+
+        "$SCANNER" scan ${SOFT_FAIL_ARG:+$SOFT_FAIL_ARG} secret --engine gitleaks --command "$CMD"
+
+    - name: Upload secret scan artifact
+      if: ${{ always() && inputs.upload_results == 'true' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: secret-scan-results
+        path: results.json
+        if-no-files-found: warn
+        retention-days: 30

@@ -1,0 +1,23 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate action.yml and shell
+        run: |
+          python3 -c "import yaml,sys; yaml.safe_load(open('action.yml'))"
+          python3 - <<'PY'
+          import yaml,subprocess
+          for s in yaml.safe_load(open('action.yml'))['runs']['steps']:
+              if 'run' in s:
+                  subprocess.run(['bash','-n'],input=s['run'],text=True,check=True)
+          PY
