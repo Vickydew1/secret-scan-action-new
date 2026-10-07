@@ -1,6 +1,6 @@
-# AccuKnox Secret Scan (Gitleaks) GitHub Action
+# AccuKnox Secret Scan GitHub Action
 
-Scans a repository for hardcoded secrets with Gitleaks via the AccuKnox ASPM scanner and uploads findings to the AccuKnox Console.
+Scans a repository for hardcoded secrets via the AccuKnox ASPM scanner and uploads findings to the AccuKnox Console.
 
 ## Usage
 
@@ -20,7 +20,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # full history so gitleaks can scan past commits
+          fetch-depth: 0   # full history so the scanner can scan past commits
 
       - uses: Vickydew1/secret-scan-action-new@latest
         with:
@@ -37,8 +37,8 @@ jobs:
 | `accuknox_token` | yes | | AccuKnox API token |
 | `accuknox_endpoint` | yes | | AccuKnox Console endpoint |
 | `accuknox_label` | yes | | Label for results in the Console |
-| `additional_arguments` | no | `""` | Extra args appended to the gitleaks command |
-| `base_command` | no | `detect --source . --report-format sarif --report-path results.json --no-banner` | Replaces the gitleaks command (keep `--report-path results.json` for artifact upload) |
+| `additional_arguments` | no | `""` | Extra args appended to the scan command |
+| `base_command` | no | `detect --source . --report-format sarif --report-path results.json --no-banner` | Replaces the scan command (keep `--report-path results.json` for artifact upload) |
 | `soft_fail` | no | `false` | Don't fail the job on findings |
 | `scanner_version` | no | `v0.15.1` | AccuKnox ASPM scanner CLI release |
 | `upload_results` | no | `true` | Upload `results.json` as an artifact |

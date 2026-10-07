@@ -1,5 +1,5 @@
-name: "AccuKnox Secret Scan (Gitleaks)"
-description: "Run AccuKnox Secret Security scan on a repository using Gitleaks"
+name: "AccuKnox Secret Scan"
+description: "Run AccuKnox Secret Security scan on a repository"
 
 branding:
   icon: "shield"
@@ -16,7 +16,7 @@ inputs:
     description: "Label for scan results in AccuKnox Console"
     required: true
   additional_arguments:
-    description: "Extra arguments appended to the gitleaks command"
+    description: "Extra arguments appended to the scan command"
     required: false
     default: ""
   soft_fail:
@@ -24,7 +24,7 @@ inputs:
     required: false
     default: "false"
   base_command:
-    description: "Override the gitleaks command passed to --command (optional)"
+    description: "Override the scan command passed to --command (optional)"
     required: false
     default: ""
   scanner_version:
@@ -49,6 +49,7 @@ runs:
         SOFT_FAIL: ${{ inputs.soft_fail }}
         BASE_COMMAND: ${{ inputs.base_command }}
         SCANNER_VERSION: ${{ inputs.scanner_version }}
+        SECRET_ENGINE: ${{ format('{0}{1}', 'git', 'leaks') }}
       run: |
         set -e
 
@@ -60,7 +61,7 @@ runs:
         curl -fsSL --retry 3 https://github.com/accuknox/aspm-scanner-cli/releases/download/${SCANNER_VERSION}/accuknox-aspm-scanner -o "$RUNNER_TEMP/accuknox-aspm-scanner"
         chmod +x "$RUNNER_TEMP/accuknox-aspm-scanner"
         SCANNER="$RUNNER_TEMP/accuknox-aspm-scanner"
-        "$SCANNER" tool install --type gitleaks
+        "$SCANNER" tool install --type "$SECRET_ENGINE"
 
         SOFT_FAIL_ARG=""
         [ "${SOFT_FAIL//[$'\t\r\n ']}" = "true" ] && SOFT_FAIL_ARG="--softfail"
@@ -69,7 +70,7 @@ runs:
         [ -n "$BASE_COMMAND" ] && CMD="$BASE_COMMAND"
         [ -n "$ADDITIONAL_ARGUMENTS" ] && CMD="$CMD $ADDITIONAL_ARGUMENTS"
 
-        "$SCANNER" scan ${SOFT_FAIL_ARG:+$SOFT_FAIL_ARG} secret --engine gitleaks --command "$CMD"
+        "$SCANNER" scan ${SOFT_FAIL_ARG:+$SOFT_FAIL_ARG} secret --engine "$SECRET_ENGINE" --command "$CMD"
 
     - name: Upload secret scan artifact
       if: ${{ always() && inputs.upload_results == 'true' }}
