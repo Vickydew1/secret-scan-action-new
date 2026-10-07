@@ -93,6 +93,27 @@ jobs:
 
 ---
 
+## 🎯 Scan Scope
+
+By default the scan covers the full git history. Pass `additional_arguments` to narrow it (optional):
+
+| Goal | `additional_arguments` | Notes |
+|---|---|---|
+| Current files only, no history | `--no-git` | Secrets committed and later deleted are not found |
+| Only this branch's commits | `--log-opts="origin/main..HEAD"` | Needs `fetch-depth: 0` on `actions/checkout` |
+| Only the latest commit | `--log-opts="-1"` | |
+
+```yaml
+- uses: accuknox/secret-scan-action@latest
+  with:
+    accuknox_token: ${{ secrets.ACCUKNOX_TOKEN }}
+    accuknox_endpoint: ${{ secrets.ACCUKNOX_ENDPOINT }}
+    accuknox_label: ${{ secrets.ACCUKNOX_LABEL }}
+    additional_arguments: "--no-git"
+```
+
+---
+
 ## 🔍 How It Works
 
 1. **Code is pushed** – The workflow triggers.
