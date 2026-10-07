@@ -68,7 +68,7 @@ jobs:
           fetch-depth: 0   # full history so past commits are scanned too
 
       - name: Run Secret Scan
-        uses: Vickydew1/secret-scan-action-new@latest
+        uses: accuknox/secret-scan-action-new@latest
         with:
           accuknox_token: ${{ secrets.ACCUKNOX_TOKEN }}
           accuknox_endpoint: ${{ secrets.ACCUKNOX_ENDPOINT }}
@@ -104,7 +104,7 @@ By default the scan covers the full git history. Pass `additional_arguments` to 
 | Only the latest commit | `--log-opts="-1"` | |
 
 ```yaml
-- uses: accuknox/secret-scan-action@latest
+- uses: accuknox/secret-scan-action-new@latest
   with:
     accuknox_token: ${{ secrets.ACCUKNOX_TOKEN }}
     accuknox_endpoint: ${{ secrets.ACCUKNOX_ENDPOINT }}
