@@ -70,7 +70,7 @@ runs:
         [ -n "$BASE_COMMAND" ] && CMD="$BASE_COMMAND"
         [ -n "$ADDITIONAL_ARGUMENTS" ] && CMD="$CMD $ADDITIONAL_ARGUMENTS"
 
-        "$SCANNER" scan ${SOFT_FAIL_ARG:+$SOFT_FAIL_ARG} secret --engine "$SECRET_ENGINE" --command "$CMD"
+        "$SCANNER" scan --keep-results ${SOFT_FAIL_ARG:+$SOFT_FAIL_ARG} secret --engine "$SECRET_ENGINE" --command "$CMD"
 
     - name: Upload secret scan artifact
       if: ${{ always() && inputs.upload_results == 'true' }}
