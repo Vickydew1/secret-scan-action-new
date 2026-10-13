@@ -21,12 +21,12 @@ inputs:
   additional_arguments:
     description: "Extra arguments appended to the scan command"
     required: false
-    default: ""
+    default: "--no-git"
 
   soft_fail:
     description: "Do not return an error code if there are failed checks"
     required: false
-    default: "false"
+    default: "true"
 
   base_command:
     description: "Override the scan command passed to --command (optional)"
