@@ -65,9 +65,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - name: Run AccuKnox Secret Scan
-        id: accuknox
-        continue-on-error: true
         uses:accuknox/secret-scan-action-new@main
         with:
           accuknox_token: ${{ secrets.ACCUKNOX_TOKEN }}
